@@ -312,7 +312,7 @@ def reaver():
 				if "E-Nonce:" in line:
 					Enonce=line[line.find("E-Nonce:")+9:line.find("\n")]
 					Enonceb=len(re.sub('[^A-Fa-f0-9]+', '', Enonce))/2,
-				if PKE!="" and AuthKey!="" and EHash1!="" and EHash2!="":hashing="done"
+				if PKE!="" and PKR!="" and AuthKey!="" and EHash1!="" and EHash2!="":hashing="done"
 				Cline.append (line)
 				line = f.readline()
 			if not line:status()
