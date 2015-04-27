@@ -77,7 +77,7 @@ def menu():
 		print"|  :  :        :   : :      \   \   ' \ |"
 		print"|  | ,'","       |   | :       :   '  |----" 
 		print"`--''          `---'.|        \   \ ; ///NxXxU   "
-		print"                 `---`         '--- v1.0.1"     
+		print"                 `---`         '--- v1.0.1\n\nModded By: DataHead"     
 
 
 
