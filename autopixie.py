@@ -45,6 +45,7 @@ import signal
 import re
 import sys
 import stat
+import random
 
 PLOOP=""
 ENABLED="ENABLED"
@@ -292,10 +293,13 @@ def reaver():
 	global WPAkey
 	global WPSpin
 	global PKR
+	global Rnonce
 	global Enonce
 	global HEADER_MADE
+	global HH
 
 	global EHash2b
+	global Rnonceb
 	global Enonceb
 	global PKRb
 	global EHash1b
@@ -303,6 +307,7 @@ def reaver():
 	global PKEb
 
 	global EHash2c
+	global Rnoncec
 	global Enoncec
 	global PKRc
 	global EHash1c
@@ -313,6 +318,7 @@ def reaver():
 	MODEL=""
 	SERIAL=""
 	PKR=""
+	Rnonce=""
 	Enonce=""
 	WPAkey=""
 	WPApin=""
@@ -328,6 +334,7 @@ def reaver():
 	PKEb=""
 	EHash1b=""
 	EHash2b=""
+	Rnonceb=""
 	Enonceb=""
 	AuthKeyb=""
 
@@ -335,6 +342,7 @@ def reaver():
 	PKEc=""
 	EHash1c=""
 	EHash2c=""
+	Rnoncec=""
 	Enoncec=""
 	AuthKeyc=""
 
@@ -388,9 +396,13 @@ def reaver():
 					Enonce=line[line.find("E-Nonce:")+9:line.find("\n")]
 					Enonceb=len(re.sub('[^A-Fa-f0-9]+', '', Enonce))/2,
 
+				if "R-Nonce:" in line:
+					Rnonce=line[line.find("R-Nonce:")+9:line.find("\n")]
+					Rnonceb=len(re.sub('[^A-Fa-f0-9]+', '', Rnonce))/2,
+
 				if PLOOP!="1" and PKE!="" and PKR!="" and AuthKey!="" and EHash1!="" and EHash2!="":hashing="done"
 				#if PKE!=PKEc or PKR!=PKRc or AuthKey!=AuthKeyc or EHash1!=EHash1c or EHash2!=EHash2c:
-				if PKE!=PKEc and PKR!=PKRc and AuthKey!=AuthKeyc and EHash1!=EHash1c and EHash2!=EHash2c and Enonce!=Enoncec:
+				if PKE!=PKEc and PKR!=PKRc and AuthKey!=AuthKeyc and EHash1!=EHash1c and EHash2!=EHash2c and Enonce!=Enoncec and Rnonce!=Rnoncec:
 				    if PKE!="" and PKR!="" and AuthKey!="" and EHash1!="" and EHash2!="":
 					pixieHashFileName="PixieHash_%s--%s" % (essid,bssid)
 					with open(pixieHashFileName,"a+") as pixieHashes:
@@ -417,7 +429,7 @@ def reaver():
 						
 						
 						if HEADER_MADE == "1":
-							hashStartHead="#\n#\t-----START PIXIE-HASHES-----\t#\n#\n#"
+							hashStartHead="#\n#\t-----START PIXIE-HASHES-----\t#\n#\n"
 							hashEndHead="#\n#\t-----END PIXIE-HASHES-----\t#\n#\n#"
 							
 							hashPad="#[P] "
@@ -425,17 +437,22 @@ def reaver():
 							pkrHash="%sPKR:\t%s\n" % (hashPad, PKR)
 							authHash="%sAuthKey:\t%s\n" % (hashPad, AuthKey)
 							enonHash="%sEnonce:\t%s\n" % (hashPad, Enonce)
+							rnonHash="%sRnonce:\t%s\n" % (hashPad, Rnonce)
 							e1Hash="%sEHash1:\t%s\n" % (hashPad, EHash1)
 							e2Hash="%sEHash2:\t%s\n" % (hashPad, EHash2)
-							pixiewpsRun="\n\n\npixiewps -e %s -r %s, -s %s -z %s -a %s -n %s\n" % (PKE, PKR, EHash1, EHash2, AuthKey, Enonce)
+							calc=((random.randint(100,500)) + (random.randint(600,800)) + (int(round(time.time() * 1000 / 100 / (random.randint(2,4))))) / (random.randint(2,4)))
+							tick = "\necho ID: %s\n" % (calc)
+
+							pixiewpsRun="\n\n\npixiewps -e %s -r %s -s %s -z %s -a %s -n %s\n" % (PKE, PKR, EHash1, EHash2, AuthKey, Enonce)
 							
-    							pixieHashes.write(hashStartHead + pkeHash + pkrHash + authHash + enonHash + e1Hash + e2Hash + pixiewpsRun + hashEndHead)
+    							pixieHashes.write(hashStartHead + tick + pkeHash + pkrHash + authHash + enonHash + rnonHash+ e1Hash + e2Hash + pixiewpsRun + hashEndHead)
 							PKEc=PKE
 							AuthKeyc=AuthKey
 							EHash1c=EHash1
 							EHash2c=EHash2
 							PKRc=PKR
 							Enoncec=Enonce
+							Rnoncec=Rnonce
 
 							##### Lets clear the old values, and make sure we can get the new 
 							PKE=""
@@ -444,6 +461,7 @@ def reaver():
 							EHash2=""
 							PKR=""
 							Enonce=""
+							Rnonce=""
 							
 					if HEADER_MADE =="1":
 						st = os.stat(pixieHashFileName)
@@ -467,11 +485,6 @@ def reaver():
 		menu()
 
 
-
-
-
-def hexHash(hex1,hex2,hex3,hex4,hex5,hex6):
-	return hash(int(hex1, 16) + int(hex2, 16) + int(hex3, 16) + int(hex4, 16) + int(hex5, 16) + int(hex6, 16))
 
 
 
@@ -540,6 +553,7 @@ def status():
 	print "E-Hash1:%s" % (EHash1b)
 	print "E-Hash2:%s" % (EHash2b)
 	print "E-Nonce:%s" % (Enonceb)
+	print "R-Nonce:%s" % (Rnonceb)
 	print
 	if WPSpin:print "PIN:%s" % (WPSpin)
 	else:print "PIN:"
@@ -615,4 +629,3 @@ print"\033[1;32m"
 menu()
 
 	
-
