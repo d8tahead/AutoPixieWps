@@ -404,7 +404,7 @@ def reaver():
 
 				if PLOOP!="1" and PKE!="" and PKR!="" and AuthKey!="" and EHash1!="" and EHash2!="":hashing="done"
 				#if PKE!=PKEc or PKR!=PKRc or AuthKey!=AuthKeyc or EHash1!=EHash1c or EHash2!=EHash2c:
-				if PKE!=PKEc and PKR!=PKRc and AuthKey!=AuthKeyc and EHash1!=EHash1c and EHash2!=EHash2c and Enonce!=Enoncec and Rnonce!=Rnoncec:
+				if PKE!=PKEc and PKR!=PKRc and AuthKey!=AuthKeyc and EHash1!=EHash1c and EHash2!=EHash2c and Enonce!=Enoncec:
 				    if PKE!="" and PKR!="" and AuthKey!="" and EHash1!="" and EHash2!="":
 					pixieHashFileName="PixieHash_%s--%s" % (essid,bssid)
 					with open(pixieHashFileName,"a+") as pixieHashes:
