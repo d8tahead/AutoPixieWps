@@ -360,6 +360,8 @@ def reaver():
 	f = open("fReaverOut")
 	try:
 		while True:
+			calc=((random.randint(100,500)) + (random.randint(600,800)) + (int(round(time.time() * 1000 / 100 / (random.randint(2,4))))) / (random.randint(2,4)))			
+			tick = "\necho ID: %s\n" % (calc)
 			line = f.readline()
 			while line:
 
@@ -406,16 +408,18 @@ def reaver():
 				    if PKE!="" and PKR!="" and AuthKey!="" and EHash1!="" and EHash2!="":
 					pixieHashFileName="PixieHash_%s--%s" % (essid,bssid)
 					with open(pixieHashFileName,"a+") as pixieHashes:
-						
+					        
+
 						if HEADER_MADE!="1":
 							pline = pixieHashes.readline()
-							while pline:
-								if "-----END AP INFO-----" in line:
-									HEADER_MADE="1"
-									
-
-
-							pline = pixieHashes.readline()
+						    	while pline:
+							
+							    if "-----END AP INFO-----" in line:
+								HEADER_MADE="1"
+							    else:
+								HEADER_MADE="" 
+							    pline = pixieHashes.readline()
+							#pline = pixieHashes.readline()
 							sheBang="#!/usr/bin/env bash"
 
 							startGenHead="\n#\t-----AP INFO-----\t#\n#"
@@ -440,8 +444,8 @@ def reaver():
 							rnonHash="%sRnonce:\t%s\n" % (hashPad, Rnonce)
 							e1Hash="%sEHash1:\t%s\n" % (hashPad, EHash1)
 							e2Hash="%sEHash2:\t%s\n" % (hashPad, EHash2)
-							calc=((random.randint(100,500)) + (random.randint(600,800)) + (int(round(time.time() * 1000 / 100 / (random.randint(2,4))))) / (random.randint(2,4)))
-							tick = "\necho ID: %s\n" % (calc)
+							
+							
 
 							pixiewpsRun="\n\n\npixiewps -e %s -r %s -s %s -z %s -a %s -n %s\n" % (PKE, PKR, EHash1, EHash2, AuthKey, Enonce)
 							
@@ -463,9 +467,9 @@ def reaver():
 							Enonce=""
 							Rnonce=""
 							
-					if HEADER_MADE =="1":
-						st = os.stat(pixieHashFileName)
-						os.chmod(pixieHashFileName, st.st_mode | 0111)
+					#if HEADER_MADE =="1":
+							st = os.stat(pixieHashFileName)
+							os.chmod(pixieHashFileName, st.st_mode | 0111)
 				Cline.append (line)
 				line = f.readline()
 
